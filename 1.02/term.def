@@ -1,0 +1,104 @@
+(*****************************************************************************
+*
+* Name    : Term
+*
+* Created : 23/12/86
+* Project : KeyDex system.
+* Purpose : Terminal input/output procedures
+* 
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*  
+* Change History:
+* --------------
+* 31/07/87 : New definition of "HelpProc".
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE Term;
+
+FROM SYSTEM IMPORT BYTE;
+
+FROM SystemIO IMPORT
+  ScrX, ScrY;
+
+
+TYPE
+  HelpProc  = PROCEDURE(CARDINAL, VAR ARRAY OF CHAR) : BOOLEAN;
+  ValidProc = PROCEDURE(CHAR) : BOOLEAN;
+
+
+VAR
+  Done    : BOOLEAN;
+  CursorX : ScrX;     (* Current cursor position, top left is (0,0) *)
+  CursorY : ScrY;
+  Font    : BYTE;     (* Current character attribute *)
+
+
+PROCEDURE Read(VAR C:CHAR);
+(* Reads a standard ASCII character from the keyboard and returns it in C.
+   Function keys and control characters except CR,BS and ESC are ignored.
+   Input is NOT echoed to the screen. *)
+
+PROCEDURE ReadString(VAR s:ARRAY OF CHAR; hp:HelpProc; vp:ValidProc;
+                     VAR newtype : BOOLEAN);
+(* Reads a string (length in s[0]). Special functions:
+    - LEFT/RIGHT move the cursor
+    - ESC aborts input and returns original string. Done=FALSE.
+    - RETURN terminates input and returns the edited string. Done=TRUE.
+    - END moves cursor to the next position after the end of the string
+    - HOME moves cursor to the beginning of the string
+    - DEL deletes current character
+    - BS deletes previous character
+    - CTRL E deletes remainder of line
+    - INS inserts a blank
+   The line editor is in overwrite mode. If Length(s)>0 on entry, then the
+   contents of s are displayed and the cursor is positioned on the first
+   character. If a non-function key (except BS,ESC,RETURN) is pressed,
+   then the line will be cleared and it is assumed that the users wants 
+   to enter something completely different. If one of the keys mentioned
+   above is pressed, then the user may edit the current contents of s.
+   Any characters beyond string length are rejected. 
+   Input is echoed to the screen. If the length of s exceeds the remaining
+   line length, then s is scrolled horizontally. hp is called if user types
+   a special key. The key type is handed to hp; 0=F1, 1=F2, 2='/'; the string
+   returned by hp is inserted at the current cursor position. If hp returns
+   TRUE, the string replaces the current string and ReadString returns.
+   vp is called for each character and must return TRUE if character is valid.
+   newtype=TRUE if the user has really entered something. *)
+
+PROCEDURE Write(C:CHAR);
+(* Writes character in c at the current position and advances cursor.
+   CR, LF, BS and FF (=Clear screen and home cursor) are interpreted. *)
+
+PROCEDURE WriteString(VAR s:ARRAY OF CHAR);
+(* Writes the string in s at the current position and advances cursor *)
+
+PROCEDURE WriteAOC(s:ARRAY OF CHAR);
+(* Same as WriteString, but works with string constants *)
+
+PROCEDURE WriteCard(x,n:CARDINAL; null:BOOLEAN);
+(* Writes cardinal x with at least n characters, preceding number with
+   blanks if necessary. If null=TRUE, then blanks are replaced by '0' chars *)
+
+PROCEDURE EraseEOL;
+(* Clears line from current cursor position to end. WARNING: Modified for 
+   KeyDex *)
+
+END Term.

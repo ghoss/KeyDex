@@ -1,0 +1,98 @@
+(*****************************************************************************
+*
+* Name    : String
+*
+* Created : 08/03/87
+* Project : Modula Library
+* Purpose : Provides operations on standard PASCAL-type strings
+* 
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 14/06/87 : Converted nearly everything to VAR parameters.
+* 05/10/87 : Changed semantics of 'Compare'.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE String;
+
+
+(* The strings used here have the following format:
+
+       TYPE STRING = ARRAY [0..N] OF CHAR;
+
+   n denotes the maximum amount of characters the string may contain
+   and element [0] contains the length of the string (0..255). All
+   operations perform clipping if the length of the resulting string
+   exceeds the size of the string variable. *)
+
+
+PROCEDURE Clear(VAR s:ARRAY OF CHAR);
+(* s := "" *)
+
+PROCEDURE Append(VAR s1,s2:ARRAY OF CHAR);
+(* Appends s2 to the end of s1 *)
+
+PROCEDURE AppendAOC(VAR s1:ARRAY OF CHAR; s2:ARRAY OF CHAR);
+(* Appends s2 to the end of s1. s2 is an array of char. *)
+
+PROCEDURE AppendCh(VAR s1:ARRAY OF CHAR; C:CHAR);
+(* Appends a character: S1:=S1+C; *)
+                 
+PROCEDURE Assign(VAR s1,s2:ARRAY OF CHAR);
+(* Assigns the value of S2 to S1: S1:=S2; *)
+
+PROCEDURE AssignAOC(VAR s1:ARRAY OF CHAR; s2:ARRAY OF CHAR);
+(* Works as Assign, but assigns an array of characters to a string *)
+
+PROCEDURE AssignStr(VAR s1,s2:ARRAY OF CHAR);
+(* Converts string s2 into array of char s1. s1 is null-terminated. *)
+
+PROCEDURE Insert(VAR s,substr:ARRAY OF CHAR; i:CARDINAL);
+(* Inserts the contents of substr into S at the position i. If i>length(S),
+   substr is appended *)
+
+PROCEDURE InsertCh(VAR s:ARRAY OF CHAR; c:CHAR; i:CARDINAL);
+(* Same as Insert, but works with characters *)
+
+PROCEDURE Delete(VAR s:ARRAY OF CHAR; i,n:CARDINAL);
+(* Deletes n characters from S, starting at position i *)
+                 
+PROCEDURE Pos(s,s1:ARRAY OF CHAR) : CARDINAL;
+(* Return the index into S of the first occurence of S1 or 0 if not found *)
+     
+PROCEDURE Copy(VAR s,s1:ARRAY OF CHAR; i,n:CARDINAL);
+(* Copies n characters from S to S1, starting at position i *)
+
+PROCEDURE Compare(VAR s1,s2:ARRAY OF CHAR) : INTEGER;
+(* Returns -1 if S1<S2, 0 if S1=S2 and 1 if S1>S2. If s1 AND s2 consist
+   entirely of digits, a numerical comparison is made instead. *)
+
+PROCEDURE WildcardMatch(VAR s,p:ARRAY OF CHAR) : BOOLEAN;
+(* Tests if source string s matches wildcard pattern p. Wildcards * and ?
+   are allowed; * matches any string including the empty string, ? matches
+   exactly one character. *)
+
+PROCEDURE UpperCase(VAR s:ARRAY OF CHAR);
+(* Converts all characters of s to upper case *)
+
+
+END String.

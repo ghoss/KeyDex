@@ -1,0 +1,77 @@
+(*****************************************************************************
+*
+* Name     : ScreenSelection
+*
+* LastEdit : 22/05/87
+* Project  : KeyDex system
+* Purpose  : Operates the menu line for Keyword/Get and File/Scan
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 03/05/87 : Added "Action" procedure for file scanning.
+* 22/12/87 : Added match list procedures and changed syntax of 'Action()'.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE ScreenSelection;
+
+FROM LongCardinals IMPORT
+  LONGCARD;
+
+
+TYPE
+  FuncProc   = PROCEDURE(CARDINAL, VAR BOOLEAN, VAR BOOLEAN);
+  ActionType = (abortSearch, addScreen, ignoreScreen);
+
+
+PROCEDURE ClearMatchList();
+(* Clears list of all matching entries. *)
+
+PROCEDURE AddMatch( page,
+                    fromL, fromP,
+                    toL, toP      : CARDINAL );
+(* Adds the position of a matching text sequence to a list for the next
+   screen. Entries in this list will be highlighted when the screen is
+   being displayed by 'Action()'. *)
+   
+PROCEDURE Action( pos : LONGCARD ) : ActionType;
+(* Loads the specified screen, highlights the positions in the match list
+   and waits for the user to select "Store", "Ignore" or "Abort". 
+   Returns selection. *)
+
+PROCEDURE GetSearchExpr(VAR s:ARRAY OF CHAR; VAR done,newtype:BOOLEAN);
+(* Opens a dialog box and waits for a keyword search expression. F1 gets
+   the index. done and newtype are as returned from "Menus". A default
+   may be handed in s. *)
+
+PROCEDURE ScreenMenu(p:FuncProc);
+(* Creates a menu line with the items 'Next/Previous/First/Last/Output/
+   Delete/Exit' and calls p for each selection. p is handed the following
+   value:
+     0 = Initialization     1 = Next screen
+     2 = Previous screen    3 = First screen
+     4 = Last screen        5 = Delete (confirmed)
+     6 = Remove screen
+  The screen is redrawn if the first argument of p returns TRUE. 
+  This procedure exits if the second argument returns TRUE. *)
+
+END ScreenSelection.

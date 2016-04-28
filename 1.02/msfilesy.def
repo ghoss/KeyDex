@@ -1,0 +1,248 @@
+(*****************************************************************************
+*
+* Name    : FileSystem
+*
+* Created : 27/06/87
+* Project : Modula-2 Library 
+* Purpose : Operations on an abstract hierarchical file system.
+* 
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 18/08/87 : Implemented "fsGetCommandLine".
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE MsFileSystem;
+
+  FROM SYSTEM IMPORT
+    BYTE, WORD, ADDRESS;
+
+
+  (*   NOTE:
+   *   ----
+   *   A 'file name' is a null-terminated ASCII-string in the following
+   *   format:  [drive:] [directory path] filename [.extension]
+   *)
+
+
+  TYPE
+    fsFile;   (* Opaque file handle, used as a reference *)
+
+    fsAccessMode = ( amRead, amWrite, amReadWrite );
+    fsShareMode  = ( smCompatibility, smDenyReadWrite, smDenyWrite,
+                     smDenyRead, smDenyNone );
+    fsErrorType  = ( etOK, etNoFile, etNoPath, etNoHandle, etNoAccess,
+                     etAllFiles, etCurrDir, etDiskChange, etEndOfFile,
+                     etDiskFull, etInternal, etDiskError, etDriveError,
+                     etWriteProtect );
+
+    fsQueryProc    = PROCEDURE(VAR ARRAY OF CHAR) : BOOLEAN;
+    fsErrorHandler = PROCEDURE(fsErrorType);
+               
+  
+  (*
+   *   File Management Routines
+   *)
+
+
+  PROCEDURE fsOpen
+              ( fn     : ARRAY OF CHAR;  (* Name of file to be opened *)
+                sm     : fsShareMode;    (* Access for other processes *)
+                am     : fsAccessMode;   (* Own access intentions *)
+                VAR fh : fsFile );       (* Returned file handle *)
+
+
+  PROCEDURE fsCreate
+              ( fn : ARRAY OF CHAR );    (* Name of file to be created *)
+            
+            (* 'CreateFile' just creates the file and returns. The file must
+               explicitly be opened with 'OpenFile'. *)
+
+
+  PROCEDURE fsClose
+              ( fh : fsFile );   (* Handle of file to be closed *)
+
+            (* The calling process should close all files opened with
+               'OpenFile', or DOS might run out of handles. MUST ONLY BE
+               CALLED AFTER A SUCCESSFUL 'OpenFile'. *)
+
+
+  PROCEDURE fsDelete
+              ( fn : ARRAY OF CHAR );   (* Name of file to be deleted *)
+   
+
+  PROCEDURE fsRename
+              ( old,new : ARRAY OF CHAR );   (* Name of old file and new file *)
+
+            (* The directory paths of 'old' and 'new' may be different, thus
+               allowing a file to be moved from one directory to another. *)
+
+  
+  PROCEDURE fsFlush
+              ( fh : fsFile );    (* Handle of file to be flushed *)
+
+            (* This call flushes all file buffers to disk and updates the 
+               directory. The call has the same effect as closing and re-
+               opening the file. *)
+
+
+  (*
+   *   File Input/Output Operations
+   *)
+
+
+  PROCEDURE fsReadByte
+             ( fh    : fsFile;    (* Handle of file to be read *)
+               VAR b : BYTE );    (* Byte to be read will be stored here *)
+
+
+  PROCEDURE fsReadWord
+              ( fh    : fsFile;   (* Handle of file *)
+                VAR w : WORD );   (* Word to be read will be stored here *)
+
+
+  PROCEDURE fsWriteByte
+              ( fh : fsFile;      (* Handle of file to be written *)
+                b  : BYTE );      (* Byte to be written *)
+
+
+  PROCEDURE fsWriteWord
+              ( fh : fsFile;      (* Handle of file *)
+                w  : WORD );      (* Word to be written *)
+
+
+  PROCEDURE fsReadBlock
+              ( fh : fsFile;          (* Handle of file to be read *)
+                bf : ADDRESS;         (* Address of destination buffer *)
+                rb : CARDINAL;        (* Number of bytes to be read *)
+                VAR br : CARDINAL );  (* Bytes actually read *)
+
+
+  PROCEDURE fsWriteBlock
+              ( fh : fsFile;          (* Handle of file to be written *)
+                bf : ADDRESS;         (* Address of source buffer *)
+                wb : CARDINAL;        (* Number of bytes to be written *)
+                VAR bw : CARDINAL );  (* Bytes actually written *)
+
+
+  PROCEDURE fsSetPos
+              ( fh    : fsFile;      (* File to be repositioned *)
+                ph,pl : CARDINAL );  (* Low and high 16 bits of position *)
+
+            (* The file can be reset to the beginning with the call
+               'fsSetPos(f,0,0)'. *)
+
+
+  PROCEDURE fsGetPos
+              ( fh : fsFile;              (* File to get position of *)
+                VAR ph,pl : CARDINAL );   (* Low and high 16 bits of position *)
+
+  
+  PROCEDURE fsLength
+              ( fh : fsFile;              (* File to get length of *)
+                VAR ph,pl : CARDINAL );   (* Low and high bits of length *)
+
+  (*
+   *   Directory Management Routines
+   *)
+
+
+  PROCEDURE fsMakeDir
+              ( dn : ARRAY OF CHAR );   (* Name of directory to create *)
+
+
+  PROCEDURE fsRemoveDir
+              ( dn : ARRAY OF CHAR );   (* Name of directory to remove *)
+
+
+  PROCEDURE fsChangeDir
+              ( dn : ARRAY OF CHAR );   (* Name of new working directory *)
+
+
+  PROCEDURE fsGetCurrentDir
+              ( VAR dn : ARRAY OF CHAR );    (* Returns current directory *)
+
+            (* String includes the drive designator *)
+
+
+  PROCEDURE fsDirQuery
+              ( fn : ARRAY OF CHAR;    (* File specification to search for *)
+                pr : fsQueryProc );    (* Proc to be called for each name *)
+
+            (* This procedure will either return if no file has been found,
+               if all files have been found, or if 'pr' returns FALSE. The
+               file specification may contain wildcards ? and *. The resul-
+               ting file names will not be preceded by a path. *)
+
+
+  (*
+   *   Error Handling
+   *)
+
+
+  PROCEDURE fsResult() : fsErrorType;
+
+              (* This procedure returns the result of the last call to a
+                 FileSystem routine. *)
+
+
+  PROCEDURE fsEnableHandler;
+
+              (* Enables the current error handler. If an operation causes an
+                 error, the handler is called with the error type. The
+                 default system handler is disabled by default. If it is
+                 enabled and an error occurs, the program is terminated.
+                 WARNING : DO NOT ISSUE DOS FUNCTION CALLS IN A HANDLER! *)
+
+
+  PROCEDURE fsDisableHandler;
+
+              (* Disables the current error handler. Any error occuring can 
+                 only be detected via the 'fsResult' function. *)
+
+
+  PROCEDURE fsInstallHandler
+              ( h : fsErrorHandler );
+
+            (* Installs a new error handler and disables it. Handlers are
+               installed on a stack, with at most 16 handlers allowed. *)
+
+
+  PROCEDURE fsDispatchHandler;
+
+            (* De-installs the current error handler. The next lower
+               error handler will become the current one. *)
+
+(*
+ *    Miscallaneous Routines
+ *)
+
+  PROCEDURE fsGetCommandLine
+              ( VAR s : ARRAY OF CHAR );
+
+              (* Returns the program's command line in s. The parameters are
+                 fetched during the initialization of this module. The
+                 line is not processed and in PASCAL string format.
+                 This procedure works for DOS versions 3.xx and later only;
+                 for earlier versions, it returns a null string. *)
+
+END MsFileSystem.

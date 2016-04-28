@@ -1,0 +1,167 @@
+(*****************************************************************************
+*
+* Name     : Menus
+*
+* LastEdit : 29/03/87
+* Project  : KeyDex system
+* Purpose  : Provides menu line and pull-down menu routines.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 29/03/87 : Modified definition of "MenuLine".
+* 29/05/87 : Changed "ErrorBox" into "MessageBox".
+* 05/06/87 : Introduced "DateBox".
+*            Implemented dynamic menu structures.
+* 23/07/87 : Introduced "DiskErrorBox".
+* 29/09/87 : Introduced "WarningBox".
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE Menus;
+
+
+FROM SystemIO IMPORT
+  ScrX, ScrY;
+
+FROM Term IMPORT
+  HelpProc, ValidProc;
+
+
+CONST
+  MaxEntries = 12;  (* Max. no of entries in a menu (pro forma only) *)
+
+
+TYPE
+  (* Types depending on constants defined above *)
+  EntryRange = [1..MaxEntries];
+  Keyword    = ARRAY [0..13] OF CHAR;
+  HelpText   = ARRAY [0..40] OF CHAR;
+  ListProc   = PROCEDURE(VAR ARRAY OF CHAR) : BOOLEAN;
+  CharProc   = PROCEDURE(CHAR);
+  HelpProcType = PROCEDURE(CARDINAL);
+  Operation  = (Scroll, Select, Mark);
+
+  MenuBarPtr = POINTER TO MenuBar;
+
+  MenuBar = RECORD
+              entries : EntryRange;
+              width   : ScrX;       (* width if pull-down menu *)
+              on      : BITSET;     (* specifies which entries may be sel. *)
+              option  : 
+                ARRAY EntryRange OF
+                  RECORD
+                    key  : Keyword;
+                    help : HelpText;
+                  END; (* RECORD *)
+            END; (* RECORD *)
+               
+
+  (* Procedures *)
+
+  PROCEDURE CreateMenu
+              ( n     : CARDINAL;
+                VAR m : MenuBarPtr );
+  (* Creates a dynamic menu structure with n options. *)
+
+  PROCEDURE MenuLine
+              ( VAR mb  : MenuBar; 
+                VAR sel : CARDINAL;
+                cp      : CharProc );
+  (* Displays the menu line in mb on the second screen line and waits for 
+     a selection. The user can maneuver with the arrow keys and select with 
+     RETURN. The index of the selection is returned in sel. 0 is returned 
+     if user aborts with ESC. The menu line is not removed and the selection
+     remains highlighted. Help texts are displayed on the first line.
+     If sel<>0 on entry, then highlight is placed on entry[sel]. If sel>100
+     on entry, then highlight on (sel-100) and direct return. (Execute).
+     Does not remove the menu line on exit. CharProc is called for each 
+     unexpected key pressed. *)
+
+  PROCEDURE ScrollBox
+              ( x0      : ScrX;
+                y0      : ScrY;
+                w       : CARDINAL;
+                r       : PROC; 
+                p, n    : ListProc;
+                m       : PROC;
+                op      : Operation; 
+                VAR sel : ARRAY OF CHAR );
+  (* Opens a scroll box with width w at position (x0,y0) and lets the user 
+     scroll through a list. p and n are procedures that must return the pre-
+     vious resp. the next item in the list. r will be called at the beginning
+     and must reset the list pointer. On return, sel contains the selected 
+     string. Sel=empty if user aborts with ESC. Removes the window on return.
+     sel must be of the same type as the arguments to p and n. If op=select
+     then a bar is displayed while scrolling. p,n must return TRUE if
+     item has been marked. If user presses SPACE and op=mark then item under
+     bar is marked and m is called. *)
+
+  PROCEDURE MessageBox
+              ( errtext : ARRAY OF CHAR;
+                err     : BOOLEAN );
+  (* Opens a box with the error message in the middle of the screen and prompts
+     user to press any key to continue. errtext must not be a variable.
+     err=TRUE : Indicator displays "Error!", otherwise displays "Note". *)
+
+  PROCEDURE DiskErrorBox
+              ( errtext    : ARRAY OF CHAR;
+                VAR action : BOOLEAN );
+  (* Displays a message box and prompts the user whether to retry or to
+     cancel. Returns action = TRUE if user wishes to retry. *)
+
+  PROCEDURE WarningBox
+              ( VAR action : BOOLEAN );
+  (* Displays message 'Current screen not saved, Continue, Abort?'. Returns
+     TRUE if user wishes to continue. *)
+
+  PROCEDURE DialogBox
+              ( prompt      : ARRAY OF CHAR; 
+                VAR s       : ARRAY OF CHAR;
+                hp          : HelpProc;
+                vp          : ValidProc;
+                VAR res,
+                    newtype : BOOLEAN);
+  (* Opens a dialog box, displays prompt and waits for user to enter string s.
+     hp, vp as defined in Term.ReadString. res=Term.done *)
+
+  PROCEDURE DateBox
+              ( VAR s : ARRAY OF CHAR );
+  (* Prompts the user to enter a date and returns the date in the form
+     __-__-__, where - and _ according to configuration settings. *)
+
+  PROCEDURE PullDownMenu
+              ( x0      : ScrX; 
+                y0      : ScrY;
+                VAR mb  : MenuBar; 
+                VAR sel : CARDINAL;
+                hp      : HelpProcType );
+  (* Operates the same as MenuBar, but displays a vertical menu rather than 
+     a horizontal menu. Menu is not removed, except when aborted with ESC. 
+     If sel=100 then left arrow and if sel=101 then right arrow has been
+     pressed. (These direction keys are ignored if y0<>2). Calls 'hp'
+     with the index of the new selection if user moved highlight. *)
+
+  PROCEDURE RemovePDMenu();
+  (* Removes the most previously opened pull-down menu. Menus are put on a
+     stack and at most 2 menus may be open at the same time *)
+
+END Menus.

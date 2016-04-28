@@ -1,0 +1,87 @@
+(*****************************************************************************
+*
+* Name     : KDScreen
+*
+* LastEdit : 29/05/87
+* Project  : KeyDex system
+* Purpose  : Status-line related procedures.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 05/04/87 : Added beep stuff.
+* 03/05/87 : Changes for 32-bit record numbers.
+* 29/05/87 : Added "note" to indicator type.
+* 05/06/87 : Added "date" to indicator type.
+*            Changed "Beep" definition.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE KDScreen;
+
+FROM SystemIO IMPORT
+  MaxX;
+
+FROM LongCardinals IMPORT
+  LONGCARD;
+
+
+CONST
+  indpos = MaxX-5;  (* horizontal position of indicator *)
+
+TYPE 
+  Indicator = (edit, input, wait, error, select, menu, scroll, mark, note, date);
+
+
+PROCEDURE Beep(how:Indicator);
+(* Beeps if beepMode=TRUE. Currently supported beep types are 'error', 'input',
+   'note' and 'date'. *)
+
+PROCEDURE SetIndicator(i:Indicator);
+(* Sets the mode indicator *)                          
+
+PROCEDURE UpdateTime;
+(* Updates time, elapsed time and date displayed on bottomline *)
+
+PROCEDURE DispFilename(VAR name:ARRAY OF CHAR);
+(* Displays a filename on the bottomline. Name, as usual, in STRING format *)
+
+PROCEDURE DispRecordKey( date  : CARDINAL;
+                         index : LONGCARD );
+(* Displays record index and date on bottomline. index=0 displays "(new)",
+   date=0 displays 'SCANNING'. *)
+
+PROCEDURE DispMatch(x,y:LONGCARD);
+(* Displays x and y in the form "(x/y)". x=0 erases this display.
+   WARNING : Currently, x and y are truncated to 65535! *)
+
+PROCEDURE SetStatus;
+(* Displays indicators on the bottomline *)
+
+PROCEDURE DispPageNo(p:CARDINAL);
+(* Displays p *)
+
+PROCEDURE InitScreen;
+(* Draws head- and bottomline *)
+
+END KDScreen.
+
+

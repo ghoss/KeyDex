@@ -1,0 +1,123 @@
+(*****************************************************************************
+*
+* Name    : SystemIO
+*
+* Created : 23/12/86
+* Project : KeyDex system.
+* Purpose : Basic console I/O procedures.
+* 
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 13/06/87 : Added "ReturnBufferAddress".
+* 24/12/87 : Added 'HelpKey()'.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE SystemIO;
+
+FROM SYSTEM IMPORT 
+  ADDRESS, BYTE;
+
+
+CONST
+  MaxX = 79;       (* No. of characters-1 in each screen direction *)
+  MaxY = 24;
+
+  white     = 7;   (* Character attribute codes, may be combined by addition *)
+  reverse   = 112; 
+  blink     = 128;
+  underline = 1;
+  intensity = 8;
+
+
+TYPE
+  ScrX = [0..MaxX];
+  ScrY = [0..MaxY];
+  Handle;
+  ScrCh = RECORD         (* ch=character, at=attribute code *)
+            ch:CHAR; at:BYTE;
+          END;
+
+
+VAR
+  blank : ScrCh;         (* empty lines or spaces will be filled with this *)
+                         (* character. Initialized to normal space *)
+
+
+(* NOTE: The area procedures will work only if (x0<=x1) and (y0<=y1) ! *)
+
+
+PROCEDURE ReturnBufferAddress(VAR a:ADDRESS);
+(* Returns the address of the screen buffer in a *)
+
+PROCEDURE ClearScreen();
+(* Erases the entire screen *)
+
+PROCEDURE ClearArea(x0,x1:ScrX; y0,y1:ScrY);
+(* Clears the specified window *)
+
+PROCEDURE SaveArea(x0,x1:ScrX; y0,y1:ScrY; VAR p:Handle; VAR Res:BOOLEAN);
+(* Saves the contents of the specified area and returns a handle in p. Res
+   is TRUE if memory allocation succeeded *)
+
+PROCEDURE RestoreArea(VAR p:Handle);
+(* Restores the contents of the window with handle p *)
+
+PROCEDURE ScrollArea(x0,x1:ScrX; y0,y1:ScrY; no:INTEGER);
+(* Scrolls the specified window by the number of lines in no. no<0 scrolls
+   down and no>0 scrolls up. *)
+
+PROCEDURE PutChar(sc:ScrCh; x:ScrX; y:ScrY);
+(* Writes character record in sc at position (x,y). *)
+
+PROCEDURE GetChar(VAR sc:ScrCh; x:ScrX; y:ScrY);
+(* Gets attribute and character at screen position (x,y) *)
+
+
+PROCEDURE SetCursor(x:ScrX; y:ScrY);
+(* Displays a block cursor at (x,y) *)
+
+PROCEDURE CursorOff();
+(* Switches the cursor off *)
+
+
+PROCEDURE ReadChar(VAR C:CHAR; VAR FK:BOOLEAN);
+(* Reads a character C directly from keyboard. FK is TRUE if a function key
+   was pressed; in this case C contains the keyboard code of this key.
+   This procedure performs a busy wait. Output is not echoed. If a handler
+   was installed using "InstallProc", it is called while waiting. *)
+   
+PROCEDURE HelpKey(c : CHAR) : BOOLEAN;
+(* Returns TRUE if function key c is a help key code. *)
+
+PROCEDURE KeyPressed():BOOLEAN;
+(* Returns TRUE if a character is waiting to be read by "ReadChar" *)
+
+
+PROCEDURE InstallHandler(p:PROC);
+PROCEDURE UninstallHandler();
+(* These procedures (de)install a handler which will be called by KeyPressed
+   and ReadChar. A typical handler would update a timer display etc. By
+   default no handler is installed. Only one handler may be installed at a
+   time. *)
+
+END SystemIO.

@@ -1,0 +1,90 @@
+(*****************************************************************************
+*
+* Name     : KDConfig
+*
+* LastEdit : 28/04/87
+* Project  : KeyDex system
+* Purpose  : Provides configuration-dependent routines.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 06/06/87 : Exported "DaysMonth", "TimeChar" and "DateChar".
+* 13/07/87 : "FileNameChar" added.
+* 02/09/87 : Added printer variables.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE KDConfig;
+
+
+FROM SYSTEM IMPORT
+  BYTE;
+
+
+CONST
+  Version       = 10;    (* Version 1.0 *)
+  KeywordLength = 20;    (* Length of a keyword *)
+  prcLength     = 15;    (* Length of printer code string *)
+
+TYPE
+  (* The KeyDex keyword *)
+  Keyword      = ARRAY [0..KeywordLength] OF CHAR;
+  ScrAttribute = (atReverse, atUnderline, atBold, atTitle);
+  prcString    = ARRAY [0..prcLength] OF CHAR;
+
+
+VAR
+  DataPath,
+  IndexPath,
+  Program            : ARRAY [0..64] OF CHAR;
+  DateType, TimeType : CARDINAL;
+  tabInterval        : INTEGER;
+  beepMode           : BOOLEAN;
+  beepFrequency      : CARDINAL;
+
+  TimeChar,
+  DateChar  : ARRAY [0..3] OF CHAR;    
+  DaysMonth : ARRAY [1..12] OF CHAR;
+
+  printerCode : ARRAY ScrAttribute OF
+                  RECORD
+                    atOn, atOff : prcString;  (* $80 = emulate *)
+                  END; (* RECORD *)
+  pageLength  : [0..255];   (* 0 = continuous printing *)
+
+
+PROCEDURE DispTime(time:CARDINAL);
+PROCEDURE DispDate(date:CARDINAL);
+(* Displays time/date at current cursor position *)
+
+PROCEDURE StrToDate(VAR datestr:ARRAY OF CHAR; VAR date:CARDINAL);
+PROCEDURE DateToStr(date:CARDINAL; VAR datestr:ARRAY OF CHAR);
+(* Converts string into a date according to current configuration setting.
+   date=0 if error occured. String must consist of 8 characters. *)
+
+PROCEDURE FileNameChar(c : CHAR) : CHAR;
+(* Checks the character c for legality in a filename. 0C is returned for 
+   illegal characters; lowercase is transformed into uppercase. *)
+
+PROCEDURE SaveConfigFile();
+
+END KDConfig.

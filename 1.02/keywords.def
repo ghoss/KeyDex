@@ -1,0 +1,163 @@
+(*****************************************************************************
+*
+* Name     : Keywords
+*
+* LastEdit : 18/04/87
+* Project  : KeyDex system
+* Purpose  : Manages the keyword list of the current screen.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 03/05/87 : 32-bit record numbers.
+* 23/05/87 : Modified definition of "InitScreen".
+* 05/06/87 : Changed "date" to "recdate".
+* 06/06/87 : Added date index procedures.
+* 13/06/87 : Removed "EnterTemplateKW".
+*            Changed definition of "InitScreen".
+* 23/06/87 : Changed definition of "Cleanup".
+* 29/07/87 : Moved "criteria" and "oldcrit" into here for print routines.
+* 29/09/87 : Introduced 'FileLoaded'.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE Keywords;
+
+FROM LongCardinals IMPORT
+  LONGCARD;
+
+IMPORT FileOp;
+
+
+TYPE
+  ErrorType   = FileOp.ErrorType;
+  KwIndexType = FileOp.FileType;
+  criteria = ARRAY [0..255] OF CHAR;
+
+
+VAR
+  oldcrit : criteria;  (* Last search expression *)
+  recdate : CARDINAL;  (* Date of current screen if loaded=TRUE *)
+  recno   : LONGCARD;  (* Record number of current screen *)
+  loaded  : BOOLEAN;   (* TRUE -> Editor pages are loaded from file *)
+  empty,
+  full    : ARRAY KwIndexType OF BOOLEAN;
+            (* TRUE -> Screen's keyword list is empty/full *)
+
+
+PROCEDURE OpenFile( VAR db,ix : ARRAY OF CHAR;
+                    VAR res  : ErrorType );
+(* Opens specified data, index, and screen list files and loads the
+   root node. *)
+
+PROCEDURE CreateFile( VAR db,ix : ARRAY OF CHAR;
+                      VAR res  : ErrorType);
+(* See FileOp.CreateFile. File is automatically opened. *)
+
+PROCEDURE CloseFile(VAR res:ErrorType);
+(* See FileOp.CloseFile *)
+
+
+PROCEDURE IndexEmpty(f:KwIndexType) : BOOLEAN;
+(* Returns FileOp.empty *)
+
+PROCEDURE FileLoaded() : BOOLEAN;
+(* Returns FileOp.fileLoaded *)
+
+PROCEDURE ClearList;
+(* Clears keyword list and resets internal pointers. Must be called after
+   editor pages are cleared. Automatically adds keyword [ALL] to empty list. *)
+
+PROCEDURE BackupList;
+PROCEDURE RestoreList;
+(* Backups/restores the keyword list *)
+
+PROCEDURE ValidKeywordChar(c:CHAR) : BOOLEAN;
+(* TRUE if c is legal in a keyword *)
+
+PROCEDURE AddKeyword(VAR kw:ARRAY OF CHAR);
+PROCEDURE AddDate(d:CARDINAL);
+(* Adds kw to the keyword list for the current screen. List
+   is maintained in alphabetical order. Checking for max=N must be done by
+   caller. *)
+
+PROCEDURE MarkKeyword;
+PROCEDURE MarkDate;
+(* Marks current keyword *)
+
+PROCEDURE Cleanup(erase : BOOLEAN; VAR erased : BOOLEAN);
+(* Deletes all marked keywords from list if erase=TRUE, otherwise only removes
+   their marks. Returns TRUE if something was erased. *)
+
+PROCEDURE ResetList;
+PROCEDURE NextKeyword(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE PrevKeyword(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE NextDate(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE PrevDate(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+(* Returns next/previous keyword in list or empty string. ResetList must be
+   called prior to these procedures. Returns the mark status as result *)
+
+
+PROCEDURE ExistLink() : BOOLEAN;
+(* True if a screen list for Keyword/Get exists *)
+
+PROCEDURE DisposeScreenList;
+(* Returns the current screen list to the heap *)
+
+PROCEDURE LoadScreen(pos:LONGCARD);
+(* Loads the specified screen into the editor buffer. *)
+
+PROCEDURE SaveScreen(new:BOOLEAN);
+(* Saves current editor pages and keyword list to disk. Updates index. *)
+
+PROCEDURE DeleteScreen(physical:BOOLEAN);
+(* physical=TRUE  : Deletes current screen from disk 
+   physical=FALSE : Only removes screen from screen list *)
+
+
+PROCEDURE InitScreen( VAR cr     : ARRAY OF CHAR; 
+                      wordOnly,
+                      ignoreCase,
+                      prompt     : BOOLEAN;
+                      VAR found,
+                          foundOne,
+                          scan,
+                          res    : BOOLEAN);
+(* Initializes the scan sequence for search criteria cr. found=no. of screens
+   found. First screen may then be loaded with "NextScreen".
+   res=FALSE indicates an error in cr. Prompt indicates whether program
+   should prompt before appending a screen to a list (scan only).
+   found=FALSE and foundOne=TRUE indicate that user aborted scan or ignored
+   screens, leaving an empty list. "scan" indicates if a sequential scan
+   was necessary. *)
+
+PROCEDURE ReturnTotal(VAR t:LONGCARD);
+(* Returns total amount of screens in screen list. *)
+
+PROCEDURE NextScreen;
+PROCEDURE PrevScreen;
+PROCEDURE FirstScreen;
+PROCEDURE LastScreen;
+PROCEDURE CurrentScreen;
+(* Load the previous resp. next screen matching cr into buffers, resp. set
+   pointer to first/last screen. *)
+
+END Keywords.

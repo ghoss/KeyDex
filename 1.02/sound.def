@@ -1,0 +1,63 @@
+(*****************************************************************************
+*
+* Name    : Sound
+*
+* Created : 05/06/87
+* Project : Modula Library.
+* Purpose : Drives the IBM PC Speaker
+* 
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE Sound;
+
+
+PROCEDURE SoundOn(Freq : CARDINAL);
+  (* turn sound on to a frequency - it will stay on until SoundOff call *)
+
+PROCEDURE SoundOff();
+  (* turn sound off *)
+
+PROCEDURE BeepTone(freq,time:CARDINAL);
+  (* Beeps for time * 1/100 sec at frequency "freq". *)
+
+PROCEDURE ErrorNoise();
+  (* standard tone sequence for minor 'error' such as pressing an 
+     unrecognized key *)
+
+PROCEDURE UrgentNoise();
+  (* more severe attention-getter for such things as 'you are about
+     to erase your whole disk' or 'you are leaving the editor without 
+     saving the file'. *)
+
+PROCEDURE AttentionNoise();
+  (* a minor 'beep' used to grab attention, but not in error situations.
+     For example, it would be used to signal that a long job (sorting 
+     eleventy-million records) is done. *)
+
+PROCEDURE SuccessNoise();
+  (* a noise that says you successfully did something (made a menu
+     pick for example *)
+
+END Sound.

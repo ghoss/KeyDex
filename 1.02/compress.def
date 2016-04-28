@@ -1,0 +1,44 @@
+DEFINITION MODULE Compress;
+
+(*
+* LastEdit: 20/12/86
+* Purpose : Character compression utility - packs data into 5-bit units
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 28/04/16 : Code cleanup and release under GPLv3 license
+*)
+
+
+PROCEDURE ValidChar(ch:CHAR) : BOOLEAN;
+(* Returns TRUE if ch is a valid character for compression. *)
+
+PROCEDURE Pack(VAR s,d:ARRAY OF CHAR; VAR n:CARDINAL);
+(* Packs source string s into destination string d. s must be in PASCAL format
+   and n will contain the index of the last byte occupied by the compressed
+   string on return. The caller must ensure that d is of sufficient length;
+   d[0] holds the first byte of the compressed string. *)
+
+PROCEDURE Unpack(VAR d,s:ARRAY OF CHAR);
+(* Unpacks string d, beginning with d[0], into s. *)
+
+
+END Compress.

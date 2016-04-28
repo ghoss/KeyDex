@@ -1,0 +1,220 @@
+(*****************************************************************************
+*
+* Name     : FileOp
+*
+* LastEdit : 27/04/87
+* Project  : KeyDex system
+* Purpose  : Handles operations on database and index files
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 19/04/87 : Added procedures for File/Scan.
+* 03/05/87 : Record numbers are 32-bit.
+* 06/06/87 : Changed "Load/OpenFile" and index file operations.
+*            Exported "lastrec". Introduced "FlushFile".
+* 16/07/87 : Introduced error handling routines.
+* 23/07/87 : Error variable introduced.
+* 26/07/87 : File scan procedures moved into "FileOp".
+* 21/08/87 : Changed definition of "ScanReset".
+* 02/09/87 : Added 'DateCreated'.
+* 29/09/87 : Introduced 'fileLoaded'.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE FileOp;
+
+
+FROM SYSTEM IMPORT 
+  BYTE, ADDRESS;
+
+FROM KDConfig IMPORT 
+  Keyword;
+
+FROM LongCardinals IMPORT 
+  LONGCARD;
+
+
+CONST
+  (* The following constants are returned by the scan routines *)
+  EOR = 1;       (* End-Of-Record *)
+  EOL = 2;       (* End-Of-Line   *)
+  EOP = 4;       (* End-of-page *)
+
+  wh = 10;       (* Text attribute toggle indicators *)
+  re = 11;
+  wu = 12;
+  wi = 13;
+  iu = 15;
+
+
+TYPE 
+  (* "notdone" denotes any kind of hardware error where a retry may be
+     successful, i.e. "Data Error" etc. *)
+  FileType  = (ScreenFile, KeywordIndex, DateIndex);
+  ErrorType = (ok, error, diskfull, illegalfile, illegalversion,
+               consistencyerr, fileexists, nofile, driveerr, writeprotect);
+
+  KeywordProc = PROCEDURE(VAR ARRAY OF CHAR) : BOOLEAN;
+  DateProc    = PROCEDURE(VAR CARDINAL);
+  RecProc     = PROCEDURE(CARDINAL, LONGCARD);
+  kwEnterProc = PROCEDURE(VAR Keyword);
+  dtEnterProc = PROCEDURE(CARDINAL);
+  ErrorProc   = PROCEDURE(ErrorType);
+
+
+VAR
+  RootPos : LONGCARD;    (* Position of root node, read-only *)
+  lastrec : LONGCARD;    (* Number of last record in file *)
+  empty   : ARRAY [KeywordIndex..DateIndex] OF BOOLEAN;
+                         (* TRUE if corresp. index file was empty; set after *)
+                         (* OpenFile,CreateFile *)
+
+  ScanEOF : BOOLEAN;     (* TRUE if screen file scan at end of file *)
+  fileLoaded : BOOLEAN;  (* TRUE if file currently loaded. *)
+
+  dbname,
+  ixname  : ARRAY [0..64] OF CHAR;  (* Names of current KeyDex files *)
+  dateCreated : CARDINAL;           (* Creation date of current data file *)
+
+
+  (* Exported file operations *)
+
+  PROCEDURE CriticalHandler(p : ErrorProc);
+  (* Specifies procedure to be called if a hardware disk error occurs. *) 
+
+  PROCEDURE EnableHandler;
+  PROCEDURE DisableHandler;
+  (* Enables, resp. disables the above installed error handler. *)
+
+  PROCEDURE CreateFile( VAR db,ix : ARRAY OF CHAR; 
+                        VAR res   : ErrorType );
+  (* Creates a set of database and index files. Filename must consist of a
+     full directory path and the file name with extension. Status
+     variable set accordingly to result of operation. The file fn is 
+     automatically opened. *)
+
+  PROCEDURE OpenFile( VAR db,ix : ARRAY OF CHAR;
+                      VAR res   : ErrorType);
+  (* Attempts to open the file set referenced to by db,ix,sl. If successful,
+     performs consistency and version checks and sets status variable. *)
+
+  PROCEDURE CloseFile(VAR res:ErrorType);
+  (* Closes the opened file set. Sets status variable if DOS buffers could be
+     flushed successfully *)
+
+  PROCEDURE FlushFile(f:FileType);
+  (* Closes the file and reopens it immediately. Flushing on "Save/Delete-
+     Screen" is done automatically. *)
+
+
+  PROCEDURE ScanReset
+              ( attr,                 (* TRUE - attributes and EOL/EOP ret. *)
+                upCase : BOOLEAN;     (* TRUE - characters are converted *)
+                dtproc : dtEnterProc; (* to be called for each date *)
+                kwproc : kwEnterProc; (* to be called for each keyword *)
+                rcproc : RecProc;     (* called for record date and #no *)
+                oneScr : BOOLEAN );   (* TRUE - one screen at a time *)
+  (* Resets the current screen file pointer to the beginning *)
+
+  PROCEDURE ScanRestorePos;
+  (* Restores file position to the point where it was saved. If called after
+     ScanReset, returns zero. *)
+
+  PROCEDURE ScanSetScreenPos(p:LONGCARD);
+  (* Sets the current position to p (must be beginning of a screen) *)
+
+  PROCEDURE ScanNextChar(VAR c : CHAR);
+  (* Returns the next byte of the screen file in b. No processing is done. *)
+
+  PROCEDURE ScanGetCharPos
+              ( VAR line : CARDINAL;
+                VAR col  : INTEGER );
+
+  PROCEDURE ScanGetScreenPos
+              ( VAR scr  : LONGCARD;
+                VAR page : CARDINAL );
+  (* Return the current line, page, and screen processed during scan *)
+
+
+  PROCEDURE OpResult() : BOOLEAN;
+  (* Returns TRUE if last FileOp operation succeeded. *)
+
+  PROCEDURE LoadNode( f   : FileType;
+                      pos : LONGCARD; 
+                      a   : ADDRESS;
+                      s   : CARDINAL );
+  (* Goes to file position "pos" and reads s bytes into a^. *)
+
+  PROCEDURE SaveNode( f       : FileType;
+                      a       : ADDRESS; 
+                      s       : CARDINAL; 
+                      VAR pos : LONGCARD;
+                      new     : BOOLEAN);
+  (* Saves s bytes in a^ at pos if new=T or at EOF if new=F. In the latter case
+     the start position is returned in "pos". *)
+  
+  PROCEDURE DeleteNode(f:FileType; pos:LONGCARD);
+  (* Deletes node at position "pos" and performs file management. *)
+
+
+  PROCEDURE LoadBlock( f   : FileType;
+                       pos : LONGCARD; 
+                       a   : ADDRESS; 
+                       s   : CARDINAL );
+
+  PROCEDURE SaveBlock( f       : FileType;
+                       a       : ADDRESS;
+                       s       : CARDINAL; 
+                       VAR pos : LONGCARD;
+                       new     : BOOLEAN );
+
+  PROCEDURE DeleteBlock(f:FileType; pos:LONGCARD);
+  (* Same operations as above for list blocks *)
+
+  PROCEDURE GetNextBlockPos(f:FileType; VAR p:LONGCARD);
+  (* Returns the position where next block would be saved *)
+
+  PROCEDURE SaveScreen( VAR pos   :LONGCARD; 
+                        date      :CARDINAL; 
+                        VAR recno :LONGCARD;
+                        kwproc    :KeywordProc;
+                        dtproc    :DateProc );
+  (* Saves the current editor pages to the database at the EOF and returns 
+     start position in "pos". Mutual exclusion is guaranteed, if position
+     is locked then Status=Error. Procedure kwp is called repeatedly and is
+     expected to return keywords which will be saved with the screen. If
+     kwp returns an empty string, the keyword list is considered to be
+     terminated. Unique record number is returned in recno *)
+
+  PROCEDURE LoadScreen( pos       : LONGCARD; 
+                        VAR date  : CARDINAL;
+                        VAR recno : LONGCARD;
+                        kwproc    : kwEnterProc;
+                        dtproc    : dtEnterProc );
+  (* Loads data from specified position into editor pages. kwp is called for
+     each keyword read. dtproc likewise for each date. recno = zero if 
+     failed to load screen. *)
+
+  PROCEDURE DeleteScreen();
+  (* Mark most recently loaded screen as deleted and performs file updating. *)
+
+END FileOp.

@@ -1,0 +1,118 @@
+(*****************************************************************************
+*
+* Name     : BTrees
+*
+* LastEdit : 11/04/87
+* Project  : KeyDex system
+* Purpose  : Operations on B-Tree structures.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 11/04/87 : Template lookup procedures.
+* 06/06/87 : Date index procedures.
+* 16/06/87 : Added "ResetTemplateEntered" and "TemplateEntered".
+* 18/08/87 : Changed definition of "BrowseKeywords" and "BrowseDates".
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE BTrees;
+
+(* Nodes are B-Tree nodes which point to linear lists of blocks *)
+
+FROM KDConfig IMPORT
+  Keyword;
+
+FROM LongCardinals IMPORT 
+  LONGCARD;
+
+FROM FileOp IMPORT
+  FileType;
+
+
+TYPE
+  IndexType = FileType;
+  kwproc    = PROCEDURE(VAR Keyword, LONGCARD) : BOOLEAN;
+  dateproc  = PROCEDURE(CARDINAL, LONGCARD) : BOOLEAN;
+
+
+PROCEDURE LookupKeyword
+            ( VAR kw    : Keyword;
+              VAR pos   : LONGCARD; 
+              new       : BOOLEAN;
+              VAR found : BOOLEAN );
+
+PROCEDURE LookupDate
+            ( date      : CARDINAL;
+              VAR pos   : LONGCARD; 
+              new       : BOOLEAN;
+              VAR found : BOOLEAN );
+
+(* new=TRUE:  Inserts kw into tree and pos into appropriate link list.
+   new=FALSE: Searches tree for kw and returns position of first block in pos.
+              Returns found=TRUE if found, FALSE otherwise *)
+
+PROCEDURE ResetTemplateEntered;
+(* Must be called after closing a file. *)
+
+PROCEDURE TemplateEntered() : BOOLEAN;
+(* Returns TRUE if a template keyword (beginning with '$') is in the index.
+   Undefined if no database open. *)
+
+PROCEDURE DeleteKeyword(VAR kw:Keyword; pos:LONGCARD);
+PROCEDURE DeleteDate(date:CARDINAL; pos:LONGCARD);
+(* Deletes entry pos from tree entry kw resp. date *)
+
+PROCEDURE ResetKeywordIndex;
+PROCEDURE NextKeywordIndex(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE PrevKeywordIndex(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+(* Returns next/previous keyword in index table or empty string. ResetIndex 
+   must be called prior to these procedures. Result is always FALSE *)
+
+PROCEDURE ResetDateIndex;
+PROCEDURE NextDateIndex(VAR d:CARDINAL);
+PROCEDURE PrevDateIndex(VAR d:CARDINAL);
+(* Returns next/previous date in index table or 0. ResetIndex 
+   must be called prior to these procedures. Result is always FALSE *)
+
+PROCEDURE NextTemplate(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+PROCEDURE PrevTemplate(VAR kw:ARRAY OF CHAR) : BOOLEAN;
+(* Same as above, but these return only keywords beginning with '$'. Use
+   "ResetIndex" to initialize. *)
+
+PROCEDURE BrowseKeywords(VAR first : Keyword; kwp : kwproc);
+PROCEDURE BrowseDates(first : CARDINAL; dp:dateproc);
+(* Browses the keyword index and calls kwp for each keyword found until all
+   keywords scanned or kwp returns FALSE. Hands the position index too, so
+   that an additional call to Lookup is not necessary. The lower limit is
+   specified in "first".
+*)
+
+PROCEDURE InitLink(index:IndexType; pos:LONGCARD);
+(* Initializes a link pointer to the link list with top in pos. Only one link
+   may be open at a time. *)
+
+PROCEDURE NextLink(index:IndexType; VAR pos:LONGCARD);
+(* Returns the next entry for l. pos=0 if at end of list; the link is auto-
+   matically disposed then. *)
+
+
+END BTrees.

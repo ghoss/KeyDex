@@ -1,0 +1,125 @@
+(*****************************************************************************
+*
+* Name     : KDEdit
+*
+* LastEdit : 22/05/87
+* Project  : KeyDex system
+* Purpose  : Screen editor.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 29/03/87 : Procedure "SpecialKey".
+* 05/04/87 : Added "insertMode".
+* 18/04/87 : Added "HighLight"/"RemoveHighLight".
+* 06/06/87 : Put "page" into dynamic storage.
+* 13/06/87 : Removed "oldattr".
+* 16/06/87 : Changed definition of "page".
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE KDEdit;
+
+
+FROM SYSTEM IMPORT BYTE;
+
+FROM SystemIO IMPORT
+  ScrCh, MaxX, MaxY;
+
+FROM KDConfig IMPORT
+  Keyword;
+
+
+CONST
+  MinR = 3; MaxR = MaxY-1;   (* Start and end rows of the editor window *)
+  MinC = 0; MaxC = MaxX;     (*   "    "   "  columns *)
+  MaxPage = 2;               (* Maximum number of pages allowed *)
+
+
+TYPE
+  (* The data structure for a screen page *)
+  EdPage       = ARRAY [MinR..MaxR],[MinC..MaxC] OF ScrCh;
+  PagePtr      = POINTER TO EdPage;
+  PagePtrArray = ARRAY [1..MaxPage] OF PagePtr;
+
+
+VAR
+  (* The following global variable is the editor window and must
+     be loaded by the caller before activating the Edit procedure.
+     The offset of the address is guaranteed to be < 16. *)
+
+  page          : PagePtrArray;
+  saved,
+  wordwrap,
+  insertMode,
+  UndoFlag      : BOOLEAN;
+  attr          : BYTE;      (* Initialized to normal *)
+  template, new : BOOLEAN;   (* Must be set by caller *)
+  defaultkw     : Keyword;   (* Set with speed key F5 *)
+
+
+PROCEDURE RedrawCurrentPage;
+(* Redraws current page on screen *)
+
+PROCEDURE HighLight(fromLine, fromPos, toLine, toPos : CARDINAL); 
+(* Sets the attributes of the specified range to blink. *)
+
+PROCEDURE RemoveHighLight;
+(* Removes the highlight *)
+
+PROCEDURE DisplayPage(pageno:CARDINAL);
+(* Displays given page of editor buffer on screen and sets current page
+   number to "pageno". *)
+
+PROCEDURE SetAttr(a : CARDINAL);
+(* Sets the current attribute to a *)
+
+PROCEDURE ClearPages(draw:BOOLEAN);
+(* Called by main menu if clear operation confirmed. Will clear all pages.
+   If draw=TRUE, then screen is cleared and page date is reset. *)
+
+PROCEDURE UserClearPages(draw:BOOLEAN);
+(* A ClearPages routine to be called by the user. *)
+
+PROCEDURE UndoClear;
+(* Undo last clear operation. Screen is redrawn upon calling of "Edit" *)
+
+PROCEDURE SpecialKey(ch:CHAR);
+(* Expects one of the characters PGUP,PGDN CPGUP or CPGDN and switches pages
+   accordingly. *)
+
+PROCEDURE Edit(VAR returntype:CARDINAL);
+(* Edits the pages previously loaded by caller. If new=TRUE the page number
+   is set to 1 and page 1 is drawn on the screen. template=TRUE sets the
+   editor into template mode. This procedure returns only if a menu button 
+   or a speed key has been pressed. menutype contains the following values 
+   on return:
+
+   0 : [F9]       5 : ALT-A
+   1 : ALT-K      2 : ALT-F
+   3 : ALT-P      4 : ALT-C
+   6 : ALT-S      7 : ALT-Q 
+   8 : F3         9 : F4
+  10 : F5        11 : F6   
+  12 : ALT-F3    13 : ALT-F4
+  14 : F1        15 : ALT-F5 *)
+
+END KDEdit.

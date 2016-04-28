@@ -1,0 +1,66 @@
+(*****************************************************************************
+*
+* Name     : LongCardinals
+*
+* LastEdit : 03/05/87
+* Project  : General Modula-2 library module.
+* Purpose  : Provides arithmetic operations on 32-bit unsigned cardinals.
+* 
+* Author   : Guido Hoss
+* System   : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*            Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 28/04/87 : Implemented "mult" and "add".
+* 03/05/87 : Implemented "inc" and "dec".
+* 13/06/87 : "greater" removed.
+* 28/04/16 : Code cleanup and release under GPLv3 license
+******************************************************************************)
+
+DEFINITION MODULE LongCardinals;
+
+
+TYPE
+  LONGCARD =
+    RECORD high, low : CARDINAL END;
+
+VAR
+  zero,               (* Initialized to high=0 & low=0 *)
+  one   : LONGCARD;   (* Initialized to high=0 & low=1 *)
+
+
+PROCEDURE less(a,b:LONGCARD) : BOOLEAN;
+(* Returns (a<b) *)
+
+PROCEDURE equal(a,b:LONGCARD) : BOOLEAN;
+(* Returns (a=b) *)
+
+PROCEDURE mult(a,b:LONGCARD; VAR result:LONGCARD);
+(* Multiplies two 32-bit cardinals and returns the result in 32 bits *)
+
+PROCEDURE add(a,b:LONGCARD; VAR result:LONGCARD);
+(* Adds two 32-bit cardinals *)
+
+PROCEDURE inc(VAR a:LONGCARD);
+(* a := a + 1 *)
+
+PROCEDURE dec(VAR a:LONGCARD);
+(* a := a - 1 *)
+
+END LongCardinals.

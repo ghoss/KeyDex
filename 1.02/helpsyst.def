@@ -1,0 +1,70 @@
+(****************************************************************************
+*
+* Name    : HelpSystem
+*
+* Created : 23/12/87
+* Purpose : Provides the interface to the SoftScreen/Help runtime manager.
+*
+* Author  : Guido Hoss
+* System  : LOGITECH MODULA-2/86, SYSTEM VERSION 3.00
+*           Copyright 1987, 2016 by Guido Hoss. All Rights Reserved. 
+*
+* KeyDex is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+* Git repository page: https://github.com/ghoss/KeyDex
+*
+* Change History:
+* --------------
+* 28/04/16 : Code cleanup and release under GPLv3 license
+*****************************************************************************)
+
+DEFINITION MODULE HelpSystem;
+
+
+TYPE
+  HelpErrorType = 
+    ( hetNotInstalled, hetInternal, hetDisk, hetNoFile );
+  HelpErrorProc = PROCEDURE(HelpErrorType);
+  
+  
+PROCEDURE OpenHelpFile
+            ( name : ARRAY OF CHAR;   (* ASCII file name of help file *)
+              proc : HelpErrorProc ); (* Error procedure to be called *)
+  (* This procedure opens the specified help file and also registers a
+     procedure which will be called with an error code if any error occurs
+     during a call to this module. *)
+     
+PROCEDURE CloseHelpFile();
+  (* Closes a help file previously opened by 'OpenHelpFile'. *)
+  
+PROCEDURE SetHelpContext(n : INTEGER);
+  (* Specifies the number of the help screen to be displayed by the next
+     call to 'EnterHelpSystem'. A value of -1 indicates that the help
+     system should be disabled. *)
+     
+PROCEDURE EnterHelpSystem();
+  (* Enters the help system and starts by displaying the screen specified
+     by a previous call to 'SetHelpContext()'. If the help system is dis-
+     abled, this procedure does nothing and returns. *)
+     
+PROCEDURE DisplayHelpPage(n : INTEGER; wait, restore : BOOLEAN);
+  (* Displays the specified help page 'n', regardless of the help context
+     setting. wait = TRUE if help system should wait for a keystroke before
+     returning; restore = TRUE if original screen contents should be
+     restored before return. *)
+     
+PROCEDURE HelpInstalled() : BOOLEAN;
+(* True if help system installed *)
+     
+END HelpSystem.
