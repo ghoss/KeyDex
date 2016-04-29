@@ -12,3 +12,5 @@ Minimum system requirements at the time were: 256K RAM, MS-DOS 2.0 or greater. I
 I'm publishing my efforts of past times under the **GPLv3 license** for the enjoyment and education of the generations after me. Hopefully I will eventually find the time to port this code to a current environment, such as Linux with ncurses. Because of its efficient design for small-volume storage, I see some potential in extending this into an encrypted data manager on embedded devices.
 
 Guido Hoss, April 2016
+
+![KeyDex Distribution Disk](https://github.com/ghoss/KeyDex/blob/master/KeyDex.jpg)
