@@ -9,7 +9,7 @@ I distributed KeyDex on 5.25" floppies. The application included an extensive he
 
 Minimum system requirements at the time were: 256K RAM, MS-DOS 2.0 or greater. I wrote the source code for the **Logitech Modula-2/86** compiler, version 3.00.
 
-I'm publishing my efforts of past times under the **GPLv3 license** for the enjoyment and education of the generations after me. Hopefully I will eventually find the time to port this code to a current environment, such as Linux with ncurses. Because of its efficient design for small-volume storage, I see some potential in extending this into an encrypted data manager on embedded devices.
+I'm publishing my efforts of past times under the **GPLv3 license** for the enjoyment and education of the generations after me. Hopefully I will eventually find the time to port this code to a current environment, such as Linux with ncurses. Because of its efficient design for small-volume storage, I see potential in extending this into an encrypted data manager on embedded devices.
 
 Guido Hoss, April 2016
 
